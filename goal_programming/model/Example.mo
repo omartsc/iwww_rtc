@@ -20,9 +20,11 @@ model Example
   input Modelica.SIunits.VolumeFlowRate Q_ablass(fixed = false, min = 0.0, max = 20.0) = ablass.Q;
   input Modelica.SIunits.VolumeFlowRate Q_in(fixed = true) = discharge.Q;
   //input Modelica.SIunits.Position H_end(fixed = true) = level.H;
-  input Modelica.SIunits.VolumeFlowRate Q_outpump(fixed = false, min = 0.0, max = 10.0) = outpump.Q;
+  //input Modelica.SIunits.VolumeFlowRate Q_outpump(fixed = false, min = 0.0, max = 10.0) = outpump.Q;
+  input Modelica.SIunits.VolumeFlowRate Q_outpump(fixed = true) = outpump.Q;
   output Modelica.SIunits.Position storage_level = storage.HQ.H;
   output Modelica.SIunits.Position outflow_level = outflow.HQ.H;
+  output Modelica.SIunits.VolumeFlowRate Q_out = outpump.Q;
   //output Modelica.SIunits.Position sea_level = level.H;
   
     

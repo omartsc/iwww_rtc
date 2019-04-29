@@ -25,6 +25,22 @@ from rtctools.util import run_optimization_problem
 #     # higher priority (=lower number).
 #     priority = 1
 
+class WasserspiegelZiel(StateGoal):
+    # Applying a state goal to every time step is easily done by defining a goal
+    # that inherits StateGoal. StateGoal is a helper class that uses the state
+    # to determine the function, function range, and function nominal
+    # automatically.
+    state = 'storage.HQ.H'
+    # One goal can introduce a single or two constraints (min and/or max). Our
+    # target water level range is 0.43 - 0.44. We might not always be able to
+    # realize this, but we want to try.
+    target_min = 0.2
+    target_max = 0.4
+
+    # Because we want to satisfy our water level target first, this has a
+    # higher priority (=lower number).
+    priority = 1
+
 class WirtschaftlichesZiel(StateGoal):
     # Applying a state goal to every time step is easily done by defining a goal
     # that inherits StateGoal. StateGoal is a helper class that uses the state
@@ -39,24 +55,24 @@ class WirtschaftlichesZiel(StateGoal):
 
     # Because we want to satisfy our water level target first, this has a
     # higher priority (=lower number).
-    priority = 1
+    priority = 2
 
 
-# class MinimizeQpumpGoal(Goal):
-#     # This goal does not use a helper class, so we have to define the function
-#     # method, range and nominal explicitly. We do not specify a target_min or
-#     # target_max in this class, so the goal programming mixin will try to
-#     # minimize the expression returned by the function method.
-#     def function(self, optimization_problem, ensemble_member):
-#         return optimization_problem.integral('Q_pump')
-#
-#     # The nominal is used to scale the value returned by
-#     # the function method so that the value is on the order of 1.
-#     function_nominal = 100.0
-#     # The lower the number returned by this function, the higher the priority.
-#     priority = 2
-#     # The penalty variable is taken to the order'th power.
-#     order = 1
+class GesamtFlussZiel(Goal):
+    # This goal does not use a helper class, so we have to define the function
+    # method, range and nominal explicitly. We do not specify a target_min or
+    # target_max in this class, so the goal programming mixin will try to
+    # minimize the expression returned by the function method.
+    def function(self, optimization_problem, ensemble_member):
+        return optimization_problem.integral('Q_pump')
+
+    # The nominal is used to scale the value returned by
+    # the function method so that the value is on the order of 1.
+    function_nominal = 100.0
+    # The lower the number returned by this function, the higher the priority.
+    priority = 3
+    # The penalty variable is taken to the order'th power.
+    order = 1
 
 
 # class MinimizeChangeInQpumpGoal(Goal):
@@ -83,7 +99,8 @@ class Example(GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # from on our goals, so we have to call super() here.
         constraints = super().path_constraints(ensemble_member)
 
-        constraints.append((self.state('storage_level'), 0.1, 0.4))
+        # constraints.append((self.state('outflow_level'), 0.1, 0.3))
+        constraints.append((self.state('Q_ablass'), 1.0, 3.0))
 
         # Release through orifice downhill only. This constraint enforces the
         # fact that water only flows downhill
@@ -114,13 +131,13 @@ class Example(GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
         return constraints
 
-    # def goals(self):
-    #     return [MinimizeQpumpGoal()]
+    def goals(self):
+        return [GesamtFlussZiel()]
 
     def path_goals(self):
         # Sorting goals on priority is done in the goal programming mixin. We
         # do not have to worry about order here.
-        return [WirtschaftlichesZiel(self)]
+        return [WirtschaftlichesZiel(self), WasserspiegelZiel(self)]
 
     def pre(self):
         # Call super() class to not overwrite default behaviour
