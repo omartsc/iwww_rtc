@@ -22,7 +22,7 @@ class Example(CSVMixin, ModelicaMixin, CollocatedIntegratedOptimizationProblem):
         # water pumped from the starting time until the stoping time. In
         # practice, self.integral() is a summation of all the discrete states.
 
-        return self.integral('Q_KBW_2', ensemble_member)
+        return self.integral('Q_KBW_3', ensemble_member)
 
     # A path constraint is a constraint where the values in the constraint are a
     # Timeseries rather than a single number.
@@ -31,21 +31,36 @@ class Example(CSVMixin, ModelicaMixin, CollocatedIntegratedOptimizationProblem):
         constraints = super().path_constraints(ensemble_member)
 
         constraints.append(
-            (self.state('Q_KBW') + (1 - self.state('is_full')) * 18,
+            (self.state('Q_KBW') + (1 - self.state('is_TSP_full')) * 18,
+                0.0, 18.0))
+
+        constraints.append(
+            (self.state('Q_KBW_2') + (1 - self.state('is_TSP2_full')) * 18,
                 0.0, 18.0))
 
         M = 2
         constraints.append(
-            (self.state('H_full') - self.state('TSP.HQ.H')
-                - (1 - self.state('is_full')) * M,
+            (self.state('H_TSP_full') - self.state('TSP.HQ.H')
+                - (1 - self.state('is_TSP_full')) * M,
                 -np.inf, 0.0))
 
-        constraints.append((self.state('H_full') - self.state('TSP.HQ.H')
-                            + self.state('is_full') * M, 0.0, np.inf))
+        constraints.append((self.state('H_TSP_full') - self.state('TSP.HQ.H')
+                            + self.state('is_TSP_full') * M, 0.0, np.inf))
 
-        constraints.append((self.state('TSP.HQ.H'), 0.2, 0.8))
+        constraints.append(
+            (self.state('H_TSP2_full') - self.state('TSP2.HQ.H')
+                - (1 - self.state('is_TSP2_full')) * M,
+                -np.inf, 0.0))
 
-        constraints.append((self.state('UWB.HQ.H'), 0.1, 0.6))
+        constraints.append((self.state('H_TSP2_full') - self.state('TSP2.HQ.H')
+                            + self.state('is_TSP2_full') * M, 0.0, np.inf))
+
+
+        constraints.append((self.state('TSP.HQ.H'), 0.1, 0.6))
+
+        constraints.append((self.state('TSP2.HQ.H'), 0.6, 0.85))
+
+        constraints.append((self.state('UWB.HQ.H'), 0.1, 1.0))
 
         return constraints
 

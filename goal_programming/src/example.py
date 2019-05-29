@@ -25,67 +25,65 @@ from rtctools.util import run_optimization_problem
 #     # higher priority (=lower number).
 #     priority = 1
 
-class WasserspiegelZiel(StateGoal):
-    # Applying a state goal to every time step is easily done by defining a goal
-    # that inherits StateGoal. StateGoal is a helper class that uses the state
-    # to determine the function, function range, and function nominal
-    # automatically.
-    state = 'storage.HQ.H'
-    # One goal can introduce a single or two constraints (min and/or max). Our
-    # target water level range is 0.43 - 0.44. We might not always be able to
-    # realize this, but we want to try.
-    target_min = 0.2
-    target_max = 0.4
+# class WasserspiegelZiel(StateGoal):
+#     # Applying a state goal to every time step is easily done by defining a goal
+#     # that inherits StateGoal. StateGoal is a helper class that uses the state
+#     # to determine the function, function range, and function nominal
+#     # automatically.
+#     state = 'storage.HQ.H'
+#     # One goal can introduce a single or two constraints (min and/or max). Our
+#     # target water level range is 0.43 - 0.44. We might not always be able to
+#     # realize this, but we want to try.
+#     target_min = 0.3
+#     target_max = 0.3
+#
+#     # Because we want to satisfy our water level target first, this has a
+#     # higher priority (=lower number).
+#     priority = 1
 
-    # Because we want to satisfy our water level target first, this has a
-    # higher priority (=lower number).
+class OptimaleGrenzen(StateGoal):
+
+    state = 'pump.Q'
+
+    target_min = 6.0
+    target_max = 17.0
+
     priority = 1
 
 class WirtschaftlichesZiel(StateGoal):
-    # Applying a state goal to every time step is easily done by defining a goal
-    # that inherits StateGoal. StateGoal is a helper class that uses the state
-    # to determine the function, function range, and function nominal
-    # automatically.
+
     state = 'pump.Q'
-    # One goal can introduce a single or two constraints (min and/or max). Our
-    # target water level range is 0.43 - 0.44. We might not always be able to
-    # realize this, but we want to try.
+
     target_min = 10.0
     target_max = 15.0
 
-    # Because we want to satisfy our water level target first, this has a
-    # higher priority (=lower number).
     priority = 2
 
 
-class GesamtFlussZiel(Goal):
-    # This goal does not use a helper class, so we have to define the function
-    # method, range and nominal explicitly. We do not specify a target_min or
-    # target_max in this class, so the goal programming mixin will try to
-    # minimize the expression returned by the function method.
+class GesamtAbfluss(Goal):
+
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.integral('Q_pump')
+        return optimization_problem.integral('Q_outpump')
 
     # The nominal is used to scale the value returned by
     # the function method so that the value is on the order of 1.
     function_nominal = 100.0
-    # The lower the number returned by this function, the higher the priority.
     priority = 3
     # The penalty variable is taken to the order'th power.
     order = 1
 
 
-# class MinimizeChangeInQpumpGoal(Goal):
-#     # To reduce pump power cycles, we add a third goal to minimize changes in
-#     # Q_pump. This will be passed into the optimization problem as a path goal
-#     # because it is an an individual goal that should be applied at every time
-#     # step.
-#     def function(self, optimization_problem, ensemble_member):
-#         return optimization_problem.der('Q_pump')
-#     function_nominal = 5.0
-#     priority = 3
-#     # Default order is 2, but we want to be explicit
-#     order = 2
+class MinimizeChangeInQpumpGoal(Goal):
+    # To reduce pump power cycles, we add a third goal to minimize changes in
+    # Q_pump. This will be passed into the optimization problem as a path goal
+    # because it is an an individual goal that should be applied at every time
+    # step.
+    def function(self, optimization_problem, ensemble_member):
+        return optimization_problem.der('Q_outpump')
+    function_nominal = 5.0
+    priority = 4
+    # Default order is 2, but we want to be explicit
+    order = 2
 
 
 class Example(GoalProgrammingMixin, CSVMixin, ModelicaMixin,
@@ -93,51 +91,21 @@ class Example(GoalProgrammingMixin, CSVMixin, ModelicaMixin,
     """
     An introductory example to goal programming in RCT-Tools
     """
+
     def path_constraints(self, ensemble_member):
-        # We want to add a few hard constraints to our problem. The goal
-        # programming mixin however also generates constraints (and objectives)
-        # from on our goals, so we have to call super() here.
+
         constraints = super().path_constraints(ensemble_member)
 
-        # constraints.append((self.state('outflow_level'), 0.1, 0.3))
-        constraints.append((self.state('Q_ablass'), 1.0, 3.0))
-
-        # Release through orifice downhill only. This constraint enforces the
-        # fact that water only flows downhill
-        # constraints.append((self.state('Q_orifice') +
-        #                    (1 - self.state('is_downhill')) * 10, 0.0, 10.0))
-
-        # Make sure is_downhill is true only when the sea is lower than the
-        # water level in the storage.
-        # M = 2  # The so-called "big-M"
-        # constraints.append((self.state('H_sea') - self.state('storage.HQ.H') -
-        #                    (1 - self.state('is_downhill')) * M, -np.inf, 0.0))
-        # constraints.append((self.state('H_sea') - self.state('storage.HQ.H') +
-        #                    self.state('is_downhill') * M, 0.0, np.inf))
-
-        # Orifice flow constraint. Uses the equation:
-        # Q(HUp, HDown, d) = width * C * d * (2 * g * (HUp - HDown)) ^ 0.5
-        # Note that this equation is only valid for orifices that are submerged
-        #          units:  description:
-        # w = 3.0  # m       width of orifice
-        # d = 0.8  # m       hight of orifice
-        # C = 1.0  # none    orifice constant
-        # g = 9.8  # m/s^2   gravitational acceleration
-        # constraints.append(
-        #     (((self.state('Q_orifice') / (w * C * d)) ** 2) / (2 * g) +
-        #      self.state('orifice.HQDown.H') - self.state('orifice.HQUp.H') -
-        #      M * (1 - self.state('is_downhill')),
-        #      -np.inf, 0.0))
+        # constraints.append((self.state('outflow_level'), 0.2, 0.35))
+        # constraints.append((self.state('Q_ablass'), 1.0, 3.0))
 
         return constraints
 
     def goals(self):
-        return [GesamtFlussZiel()]
+        return [GesamtAbfluss()]
 
     def path_goals(self):
-        # Sorting goals on priority is done in the goal programming mixin. We
-        # do not have to worry about order here.
-        return [WirtschaftlichesZiel(self), WasserspiegelZiel(self)]
+        return [OptimaleGrenzen(self), MinimizeChangeInQpumpGoal(), WirtschaftlichesZiel(self)]
 
     def pre(self):
         # Call super() class to not overwrite default behaviour
