@@ -4,12 +4,13 @@ model Example
     Placement(visible = true, transformation(origin = {45, 65}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   Deltares.ChannelFlow.Hydraulic.Storage.Linear TSP(A = 1.0e6, H_b = 0.0, HQ.H(min = 0.0, max = 0.6)) annotation(
     Placement(visible = true, transformation(origin = {-87.978, -5}, extent = {{-10, -10}, {10, 10}}, rotation = 270)));
+  Deltares.ChannelFlow.Hydraulic.Storage.Linear2 TSP2(A = 1.0e6, H_b = 0.0, HQ.H(min = 0.6, max = 1.0)) annotation(
+    Placement(visible = true, transformation(origin = {-95, 65}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   Deltares.ChannelFlow.Hydraulic.BoundaryConditions.Discharge ZFL annotation(
     Placement(visible = true, transformation(origin = {-135, -5}, extent = {{10, -10}, {-10, 10}}, rotation = 90)));
   Deltares.ChannelFlow.Hydraulic.BoundaryConditions.Discharge EZG annotation(
     Placement(visible = true, transformation(origin = {-135, -25}, extent = {{-10, -10}, {10, 10}}, rotation = 90)));
-  Deltares.ChannelFlow.Hydraulic.Storage.Linear2 TSP2(A = 1.0e6, H_b = 0.0, HQ.H(min = 0.6, max = 1.0)) annotation(
-    Placement(visible = true, transformation(origin = {-95, 65}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  
   Deltares.ChannelFlow.Hydraulic.Structures.Pump KBW annotation(
     Placement(visible = true, transformation(origin = {-95, 30}, extent = {{-10, -10}, {10, 10}}, rotation = 90)));
   Deltares.ChannelFlow.Hydraulic.Structures.Pump KBW_2 annotation(

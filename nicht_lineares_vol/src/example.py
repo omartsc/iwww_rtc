@@ -30,6 +30,13 @@ class Example(CSVMixin, ModelicaMixin, CollocatedIntegratedOptimizationProblem):
         # Call super to get default constraints
         constraints = super().path_constraints(ensemble_member)
 
+        # es werden 2 boolsche Variablen mitoptimiert zur Steuerung
+        # von 2 Pumpen-Elemente (Q_KBW und Q_KBW_2)
+
+        # die maximale Wasserspiegel für die Steuerung wird für jeden
+        # Zeitschritt im timeseries_import.csv gesetzt. Diese Werte
+        # müssen nicht die gleichen wie in den hard constraints sein
+
         constraints.append(
             (self.state('Q_KBW') + (1 - self.state('is_TSP_full')) * 18,
                 0.0, 18.0))
@@ -55,6 +62,9 @@ class Example(CSVMixin, ModelicaMixin, CollocatedIntegratedOptimizationProblem):
         constraints.append((self.state('H_TSP2_full') - self.state('TSP2.HQ.H')
                             + self.state('is_TSP2_full') * M, 0.0, np.inf))
 
+        # TSP und TSP2 werden im Modelica durch 2 unterschiedliche Klassen
+        # definiert(Linear und Linear2), so dass sie 2 verschiedene
+        # Volumen-Funktionen verwenden.
 
         constraints.append((self.state('TSP.HQ.H'), 0.1, 0.6))
 
