@@ -31,7 +31,7 @@ class WaterLevelRangeGoal(StateGoal):
 
     month = datetime.strptime(results["utc"][0], "%Y-%m-%d %H:%M:%S").month
 
-    print(month)
+    print('>>>> StateGoal  >>>> Month: ', month)
 
     reserve = 0.0
     if(month > 5):
@@ -86,6 +86,13 @@ class Example(GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # programming mixin however also generates constraints (and objectives)
         # from on our goals, so we have to call super() here.
         constraints = super().path_constraints(ensemble_member)
+
+        # data_path = "./input/timeseries_import.csv"
+        # results = np.recfromcsv(data_path, encoding=None)
+        #
+        # month = datetime.strptime(results["utc"][0], "%Y-%m-%d %H:%M:%S").month
+
+        # print("////// path_constraints --------- Month: ", month)
 
         # Release through orifice downhill only. This constraint enforces the
         # fact that water only flows downhill
