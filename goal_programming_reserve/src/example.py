@@ -30,8 +30,10 @@ class WaterLevelRangeGoal(StateGoal):
     results = np.recfromcsv(data_path, encoding=None)
 
     month = datetime.strptime(results["utc"][0], "%Y-%m-%d %H:%M:%S").month
+    day = datetime.strptime(results["utc"][0], "%Y-%m-%d %H:%M:%S").day
 
     print('>>>> StateGoal  >>>> Month: ', month)
+    print('>>>> StateGoal  >>>> Day: ', day)
 
     reserve = 0.0
     if(month > 5):
